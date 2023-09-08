@@ -198,20 +198,32 @@ resource "google_service_account" "kubernetes" {
   project = var.project
 }
 
+resource "google_project_iam_member" "kubernetes_artifact_registry_admin" {
+  project = var.project
+  role    = "roles/artifactregistry.admin"
+  member  = "serviceAccount:${google_service_account.kubernetes.email}"
+}
+
 #https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/container_node_pool
 resource "google_container_node_pool" "general" {
   name       = "general"
   cluster    = google_container_cluster.primary.id
-  node_count = 1
+  node_count = 3
 
   management {
     auto_repair  = true
     auto_upgrade = true
   }
 
+  autoscaling {
+    min_node_count = 3
+    max_node_count = 8
+  }
+
   node_config {
-    preemptible  = false
-    machine_type = "e2-medium"
+    preemptible  = true
+    disk_type    = "pd-standard"
+    machine_type = "e2-standard-2"
 
     labels = {
       role = "general"
@@ -224,40 +236,40 @@ resource "google_container_node_pool" "general" {
   }
 }
 
-resource "google_container_node_pool" "spot" {
-  name    = "spot"
-  cluster = google_container_cluster.primary.id
-  node_count = 2
+# resource "google_container_node_pool" "spot" {
+#   name    = "spot"
+#   cluster = google_container_cluster.primary.id
+#   node_count = 2
 
-  management {
-    auto_repair  = true
-    auto_upgrade = true
-  }
+#   management {
+#     auto_repair  = true
+#     auto_upgrade = true
+#   }
 
-  autoscaling {
-    min_node_count = 2
-    max_node_count = 8
-  }
+#   autoscaling {
+#     min_node_count = 2
+#     max_node_count = 8
+#   }
 
-  node_config {
-    preemptible  = true
-    disk_size_gb = 30
-    disk_type    = "pd-standard"
-    machine_type = "e2-medium"
+#   node_config {
+#     preemptible  = true
+#     #disk_size_gb = 30
+#     disk_type    = "pd-standard"
+#     machine_type = "e2-standard-2"
 
-    labels = {
-      team = "devops"
-    }
+#     labels = {
+#       team = "devops"
+#     }
 
-    taint {
-      key    = "instance_type"
-      value  = "spot"
-      effect = "NO_SCHEDULE"
-    }
+#     taint {
+#       key    = "instance_type"
+#       value  = "spot"
+#       effect = "NO_SCHEDULE"
+#     }
 
-    service_account = google_service_account.kubernetes.email
-    oauth_scopes = [
-      "https://www.googleapis.com/auth/cloud-platform"
-    ]
-  }
-}
+#     service_account = google_service_account.kubernetes.email
+#     oauth_scopes = [
+#       "https://www.googleapis.com/auth/cloud-platform"
+#     ]
+#   }
+# }
