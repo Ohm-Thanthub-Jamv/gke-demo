@@ -1,7 +1,7 @@
 # https://www.terraform.io/language/settings/backends/gcs
 terraform {
   backend "gcs" {
-    credentials = "my-project-879-392506-e5471161e499.json"
+    credentials = "my-project-credentials.json" ##Credential json file##
     bucket = "25171c789469a164-bucket-tfstate"
     prefix = "terraform/state-gke"
   }
